@@ -1,18 +1,12 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
-```{r setup, include=FALSE, cache=T}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE)
-```
+
 
 
 #####The following will be needed:
 
-```{r library, results='hide', echo = TRUE, message=FALSE}
+
+```r
   library(dplyr)
   library(mice)
   library(VIM)
@@ -23,64 +17,116 @@ knitr::opts_chunk$set(echo = FALSE, message=FALSE)
 https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
 
 #####Code for reading in the dataset:
-```{r read input, echo = TRUE}
+
+```r
 fileIn <- read.csv("activity.csv")
 ```
 
 #####First look at the data with no NAs
-```{r no NAs, echo = TRUE}
+
+```r
 noNa <- fileIn[complete.cases(fileIn),]
 ```
 
 #####Set date and sum of steps
-```{r date and sum, echo = TRUE}
+
+```r
 noNa$date <-  as.Date(noNa$date, format = "%Y-%m-%d")
 totalStepDay <- aggregate(steps ~ date, noNa, sum)
 ```
 
 #####Histogram of the total number of steps taken each day:
-```{r hist of steps, echo = TRUE}
+
+```r
 hist(totalStepDay$steps, xlab = "Steps", col = "navyblue", main = "Histogram of Activity Steps")
 ```
 
+![](PA1_template_files/figure-html/hist of steps-1.png)<!-- -->
+
 #####Mean and median number of steps taken each day
-```{r first means median, echo = TRUE}
+
+```r
 mean(totalStepDay$steps)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
 median(totalStepDay$steps)
 ```
 
+```
+## [1] 10765
+```
+
 #####Time series plot of the average number of steps taken
-```{r ts plot, echo = TRUE }
+
+```r
 intervalStep <- aggregate(steps ~ interval, noNa, mean)
 avgStepsTaken <-tapply(noNa$steps,noNa$interval, mean)
 plot(avgStepsTaken, type = "l", col = "navyblue", xlab = "Interval Index", ylab = "Steps Taken")
 ```
 
+![](PA1_template_files/figure-html/ts plot-1.png)<!-- -->
+
 #####The 5-minute interval that, on average, contains the maximum number of steps.  
 #####The maximun steps rounded:
-```{r max round, echo = TRUE}
+
+```r
 maxStepsRound <- round(max(intervalStep$steps))
 maxStepsRound
 ```
 
+```
+## [1] 206
+```
+
 #####Which Interval:
-```{r which interval, echo = TRUE}
+
+```r
 interval <- which.max(intervalStep$steps)
 interval
 ```
 
+```
+## [1] 104
+```
+
 #####Number of missing data = 2304
-```{r pattern, echo = TRUE}
+
+```r
 md.pattern(fileIn)
 ```
 
+```
+##       date interval steps     
+## 15264    1        1     1    0
+##  2304    1        1     0    1
+##          0        0  2304 2304
+```
+
 #####Histogram and Pattern of missing data, another view showing all NAs are within steps
-```{r missing data plot, echo = TRUE}
+
+```r
 aggr_plot <- aggr(fileIn, col=c('navyblue','red'), numbers=TRUE, sortVars=TRUE, labels=names(data), cex.axis=.7, gap=3, ylab=c("Histogram of missing data","Pattern"))
 ```
 
+![](PA1_template_files/figure-html/missing data plot-1.png)<!-- -->
+
+```
+## 
+##  Variables sorted by number of missings: 
+##  Variable     Count
+##     steps 0.1311475
+##      date 0.0000000
+##  interval 0.0000000
+```
+
 #####Code to describe and show a strategy for imputing missing data. Will show if there much comparable difference.
-```{r mice, echo = TRUE, results='hide'}
+
+```r
 fileIn$steps <- as.numeric(fileIn$steps)
 tempData <- mice(fileIn,m=5,maxit=50,meth='pmm',seed=500)
 
@@ -90,40 +136,74 @@ totalStepDay2 <- aggregate(steps ~ date, completedData, sum)
 ```
 
 #####Histogram of the total number of steps taken each day after missing values are imputed
-```{r plot total imputed, , echo = TRUE}
+
+```r
 hist(totalStepDay2$steps, xlab = "Steps", col = "navyblue", main = "New Histogram of Activity Steps")
 ```
 
+![](PA1_template_files/figure-html/plot total imputed, -1.png)<!-- -->
+
 #####Mean and median number of steps taken each day, after missing values are imputed
-```{r imputed mean median, echo = TRUE}
+
+```r
 mean(totalStepDay2$steps)
+```
+
+```
+## [1] 10399.89
+```
+
+```r
 median(totalStepDay2$steps)
 ```
 
+```
+## [1] 10439
+```
+
 #####Histograms side-by-side showing the difference with and without missing values are imputed.  Shows there is a noticable difference in frequency.
-```{r sidebyside plot, echo = TRUE}
+
+```r
 par(mfrow=c(1,2))
 hist(totalStepDay$steps, xlab = "Steps", col = "red", main = "Histogram of Activity Steps")
 hist(totalStepDay2$steps, xlab = "Steps", col = "red", main = "New Histogram of Activity Steps")
 ```
 
+![](PA1_template_files/figure-html/sidebyside plot-1.png)<!-- -->
+
 #####Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends.    
-```{r weekends, echo = TRUE}
+
+```r
 wkendWkdays <- mutate(completedData, wktype= ifelse(weekdays(completedData$date) == "Saturday" | weekdays(completedData$date) == "Sunday", "weekend", "weekday"))
 wkendWkdays$weektype <- as.factor(wkendWkdays$wktype)
 head(wkendWkdays)
+```
 
+```
+##   steps       date interval  wktype weektype
+## 1     0 2012-10-01        0 weekday  weekday
+## 2     0 2012-10-01        5 weekday  weekday
+## 3     0 2012-10-01       10 weekday  weekday
+## 4     0 2012-10-01       15 weekday  weekday
+## 5     0 2012-10-01       20 weekday  weekday
+## 6     0 2012-10-01       25 weekday  weekday
+```
+
+```r
 avg_wkendWkdays <- wkendWkdays %>%
   group_by(interval, wktype) %>%
   summarize(steps = mean(steps))
 ```
 
-```{r plot weekends v weekdays, echo = TRUE}
+
+```r
 ggplot(avg_wkendWkdays, aes(interval, steps, color = wktype)) +
   geom_line(color="navyblue") +
   facet_wrap(~wktype, ncol=1, nrow=2) +
   labs(title="Weekday/Weekend Differences during various Intervals", x="Interval", y="Steps")
 ```
+
+![](PA1_template_files/figure-html/plot weekends v weekdays-1.png)<!-- -->
 
 
 ##Reference:
